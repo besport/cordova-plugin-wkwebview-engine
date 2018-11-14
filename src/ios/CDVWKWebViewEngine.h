@@ -26,4 +26,6 @@
 
 - (void)allowsBackForwardNavigationGestures:(CDVInvokedUrlCommand*)command;
 
+@property (nonatomic, strong, readwrite) NSURLRequest* lastRequest;
+
 @end
