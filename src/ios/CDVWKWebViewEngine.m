@@ -103,7 +103,7 @@
         [wkWebView.scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
     }
 #endif
-    
+
     wkWebView.UIDelegate = self.uiDelegate;
     self.engineWebView = wkWebView;
 
@@ -156,7 +156,7 @@ static void * KVOContext = &KVOContext;
     if (context == KVOContext) {
         if (object == [self webView] && [keyPath isEqualToString: @"URL"] && [object valueForKeyPath:keyPath] == nil){
             NSLog(@"URL is nil. Reloading WKWebView");
-            [(WKWebView*)_engineWebView reload];
+            [self reloadWebView];
         }
     } else {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -166,7 +166,7 @@ static void * KVOContext = &KVOContext;
 - (void) onAppWillEnterForeground:(NSNotification*)notification {
     if ([self shouldReloadWebView]) {
         NSLog(@"%@", @"CDVWKWebViewEngine reloading!");
-        [(WKWebView*)_engineWebView reload];
+        [self reloadWebView];
     }
 }
 
@@ -193,10 +193,18 @@ static void * KVOContext = &KVOContext;
     return reload;
 }
 
+- (void)reloadWebView
+{
+  if (_lastRequest)
+    [self loadRequest:_lastRequest];
+  else
+    [(WKWebView*)_engineWebView reload];
+}
 
 - (id)loadRequest:(NSURLRequest*)request
 {
     if ([self canLoadRequest:request]) { // can load, differentiate between file urls and other schemes
+        _lastRequest = request;
         if (request.URL.fileURL) {
             SEL wk_sel = NSSelectorFromString(CDV_WKWEBVIEW_FILE_URL_LOAD_SELECTOR);
             NSURL* readAccessUrl = [request.URL URLByDeletingLastPathComponent];
@@ -406,7 +414,7 @@ static void * KVOContext = &KVOContext;
 
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView
 {
-    [webView reload];
+    [self reloadWebView];
 }
 
 - (BOOL)defaultResourcePolicyForURL:(NSURL*)url
